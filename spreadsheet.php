@@ -31,6 +31,7 @@ class Spreadsheet{
 		return new Google_Service_Sheets($client);
 	}
 	
+	
 
 	//incorporated json as well as csv, if json then true else return csv
 	public function getRange($range, $asJson = true) {
@@ -53,9 +54,15 @@ class Spreadsheet{
 	
 	public function getRangeColumn($column, $startRow, $endRow) {
 		$range = "{$column}{$startRow}:{$column}{$endRow}";
-		$response = $this->service->spreadsheets_values->get($this->sheetId, $range);
-		$values = $response->getValues();
-	
+		// $range = "P2:P2";
+
+		$params = [
+			'valueRenderOption' => 'FORMATTED_VALUE'
+				];
+
+		$response = $this->service->spreadsheets_values->get($this->sheetId, $range, $params);		
+		$values = $response->getValues() ?? [0];
+
 		// Flatten the response to a simple array
 		$columnValues = [];
 		foreach ($values as $row) {
@@ -86,14 +93,12 @@ class Spreadsheet{
 	}
 
 	//updates the approval columns with yes or no 
-	public function updateYesNo($row, $column, $isApproved) {
-		$range = "$column$row";
-		$isApproved = filter_var($isApproved, FILTER_VALIDATE_BOOLEAN);
+	public function updateRowColumn($row, $column, $data) {
 
-		$value = $isApproved ? "Yes" : "No";
+		$range = "$column$row";
 	
 		$body = new Google_Service_Sheets_ValueRange([
-			'values' => [[$value]]
+			'values' => [[$data]]
 		]);
 	
 		$params = ['valueInputOption' => 'RAW'];

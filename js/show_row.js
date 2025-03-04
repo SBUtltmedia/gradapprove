@@ -14,17 +14,49 @@ const columnMap = {
 let landingPage = document.getElementById("landing-page");
 
 
-fetch(`get_cell.php?rowId=${rowId}&approvalId=${approvalId}`)
-    .then(response => response.json())
-    .then(({ approval_status }) =>
-        (["Yes", "No"].includes(approval_status?.trim()) && displayMessage(approval_status === "Yes")) ||
-        fetch(`get_row.php?rowId=${rowId}&approvalId=${approvalId}`)
-            .then(response => response.json())
-            .then(displayData)
-    )
-    .catch(error => console.error("Error fetching data:", error));
+// addEventListener("DOMContentLoaded", () => {
+//     init();
+// });
 
 
+// function init(){
+
+//     fetch(`get_cell.php?rowId=${rowId}&approvalId=${approvalId}`)
+//         .then(response => response.json())
+//         .then(( approval_status ) =>
+
+//             // (["Yes", "No"].includes(approval_status?.trim()) && displayApprovalMessage(approval_status === "Yes")) ||
+//             fetch(`get_row.php?rowId=${rowId}&approvalId=${approvalId}`)
+//                 .then(response => response.json())
+//                 .then(displayData)
+//         )
+//         .catch(error => console.error("Error fetching data:", error));
+
+// }
+
+
+
+document.addEventListener("DOMContentLoaded", () => init());
+
+function init() {
+    fetch(`get_cell.php?rowId=${rowId}&approvalId=${approvalId}`)
+        .then(response => response.json())
+        .then(({ approval_status }) => {
+            if (["Yes", "No"].includes(approval_status?.trim())) {
+                let isApproved = approval_status==="Yes";
+                displayApprovalMessage(isApproved);
+                return;
+            }
+            return fetch(`get_row.php?rowId=${rowId}&approvalId=${approvalId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // if (!document.querySelector(".message-container")) {
+                        displayData(data);
+                    // }
+                });
+        })
+        .catch(error => console.error(error));
+}
 
 function displayData(data) {
 
@@ -86,11 +118,6 @@ function displayData(data) {
     detailsContainer.appendChild(dataContainer);
     landingPage.append(detailsContainer);
 
-    // let lastRow = dataContainer.querySelector(".data-row:last-child");
-    // if (lastRow) {
-    //     lastRow.style.display = "none";
-    // }
-
 
     setupApprovalButtons();
 }
@@ -102,22 +129,24 @@ function setupApprovalButtons() {
     ["Yes", "No"].forEach(text => {
         let button = document.createElement("button");
         button.innerText = text;
-        let value = (text == "Yes");
+        // let value = (text == "Yes");
         button.classList.add(text.toLowerCase());
-        button.onclick = () => handleDecision(value);
+        button.onclick = () => handleApprovalDecision(text);
         approveDiv.appendChild(button);
     });
 
     landingPage.appendChild(approveDiv);
 }
 
-function handleDecision(isApproved) {
-    fetch(`update_yes_no.php?rowId=${rowId}&column=${columnMap[approvalId]}&isApproved=${isApproved}`)
-        .then(() => displayMessage(isApproved));
+function handleApprovalDecision(approval_status) {
+    let isApproved = approval_status==="Yes";
+
+    fetch(`update_yes_no.php?rowId=${rowId}&column=${columnMap[approvalId]}&approval_status=${approval_status}`)
+        .then(() => displayApprovalMessage(isApproved));
 }
 
 
-function displayMessage(isApproved) {
+function displayApprovalMessage(isApproved) {
     document.body.innerHTML = "";
 
     let messageContainer = document.createElement("div");
