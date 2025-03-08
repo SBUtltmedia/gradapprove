@@ -2,6 +2,13 @@
 function sendEmail($rowId, $approvalId, $to) {
     $server = $_SERVER['SERVER_NAME'];
 
+    if(array_key_exists('SERVER_NAME', $_SERVER)){
+        $server = $_SERVER['SERVER_NAME'];
+    }
+    else{
+        $server = "apps.tlt.stonybrook.edu";
+    }
+
     $to = "$to";
     $subject = "New Student Enrollment Alert!"; ////////// "First Name" "Last name" has requested a thessis approval fo r"column H"
 
