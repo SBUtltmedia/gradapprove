@@ -1,6 +1,7 @@
 <?php
 
 require __DIR__ . '/vendor/autoload.php';
+require "util.php";
 class Spreadsheet{
 
 	private string $sheetId;
@@ -12,7 +13,15 @@ class Spreadsheet{
 
 		$this->sheetId=$sheetId;
 		$this->service=$this->getService();
+		$this->headers=$this->service->spreadsheets_values->get($this->sheetId, "A1:Z1")->getValues()[0];
+		$this->util= new Util();
+
 	}
+	
+
+	public function getSheetId(): string {
+		return $this->sheetId;
+	}	
 
 
 
@@ -137,5 +146,64 @@ class Spreadsheet{
 
 		return count($values);
 	}
+
+
+	// extract sheet ID from URL
+	public function extractSheetIdFromUrl(string $url): ?string {
+		if (preg_match('/\/d\/([a-zA-Z0-9-_]+)(?:\/|$)/', $url, $matches)) {
+			return $matches[1];
+		}
+		return null;
+	}
+
+
+	// get a cell vlaue by providing COLUMN NAMES and row ID
+	public function getCellFromRowByHeader(string $headerName, int $rowNumber): ?string {
+			// calculate the column index for the given header
+			$columnIndex = array_search($headerName, $this->headers);
+		
+			$columnName= $this->util->numberToColumnName($columnIndex+1);
+
+			// defininig like "B4"
+			$cell = $columnName . $rowNumber;
+		
+			// get the cell value
+			$response = $this->service->spreadsheets_values->get($this->sheetId, $cell);
+			$value = $response->getValues()[0][0] ?? "";
+			return $value;
+		}
+
+
+		// function to add a new column to the end of the sheet with a given header name
+		public function addNewColumnToEnd(string $sheetName, string $newColumnName): void {
+			$headers = $this->service->spreadsheets_values
+				->get($this->sheetId, "$sheetName!1:1")
+				->getValues()[0] ?? [];
+
+			// determine the next empty column
+			$newColumnIndex = count($headers);
+			$columnLetter = $this->columnIndexToLetter($newColumnIndex);
+
+			// set the new header value in the first row of that column
+			$range = "$sheetName!{$columnLetter}1";
+			$body = new Google_Service_Sheets_ValueRange([
+				'values' => [[$newColumnName]]
+			]);
+
+			$params = ['valueInputOption' => 'RAW'];
+			$this->service->spreadsheets_values->update($this->sheetId, $range, $body, $params);
+		}
+
+		// function to convert column index to A, B, Z, AA, AB
+		public function columnIndexToLetter($index): string {
+			$letter = '';
+			while ($index >= 0) {
+				$letter = chr($index % 26 + 65) . $letter;
+				$index = intval($index / 26) - 1;
+			}
+			return $letter;
+		}
+		
+
 
 }

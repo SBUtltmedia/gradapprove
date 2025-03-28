@@ -7,8 +7,7 @@ $spreadsheetId = "1jA4Irh9G5XM4ePbWZAosnroMu0rY5vGvuc671TtykeA";
 $spreadsheet = new Spreadsheet($spreadsheetId);
 
 $highestRow = $spreadsheet->getHighestRow("Sheet1");
-// print($highestRow);
-
+// $highestRow =2;
 
 $columnMap = [
     "1" => "Email address of thesis director/course director/GPD/ English faculty nominee (MA/BA program) for approval",
@@ -22,13 +21,15 @@ for ($rowId = 2; $rowId <= $highestRow; $rowId++) {
 
     if (strpos($processedCell, "yes") === false) {
         $dataJson = json_decode($spreadsheet->getRange("A$rowId:Z$rowId", true), true);
-        // print_r($dataJson);
 
         foreach ($columnMap as $approvalId => $columnName) {
             $emailAddress = $dataJson[0][$columnName] ?? "";
-            // echo "Email Address: " . $emailAddress . "\n";
+            $firstName = json_decode($spreadsheet->getRangeColumn("C", $rowId, $rowId), true)[0] ?? '';
+            $lastName = json_decode($spreadsheet->getRangeColumn("D", $rowId, $rowId), true)[0] ?? '';
+            $columnH = json_decode($spreadsheet->getRangeColumn("H", $rowId, $rowId), true)[0] ?? '';
+
             if (!empty($emailAddress)) {
-                sendEmail($rowId - 1, $approvalId, $emailAddress);
+                sendEmail($rowId - 1, $approvalId, $emailAddress, $firstName, $lastName, $columnH, $dataJson);
             }    
 
             $spreadsheet->updateRowColumn($rowId, "P", "Yes");
