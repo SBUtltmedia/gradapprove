@@ -74,7 +74,7 @@ function displayData(data) {
     headerDiv.appendChild(header);
     dataContainer.prepend(headerDiv);
 
-    delete data["Processed"];
+    delete data["Form Processed"];
 
 
     let approverValKeys = Object.keys(data).filter((key) => {

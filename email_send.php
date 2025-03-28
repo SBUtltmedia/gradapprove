@@ -16,7 +16,7 @@ function sendEmail($rowId, $approvalId, $to, $firstName, $lastName, $columnH, $d
         "Approval 1",
         "Approval 2",
         "Approval 3",
-        "Processed",
+        "Form Processed",
         "Email address of thesis director/course director/GPD/ English faculty nominee (MA/BA program) for approval",
         "Email address of second reader/committee member/English faculty nominee (MA/BA program)  (if relevant)",
         "Email address of third reader/committee member/English faculty nominee (MA/BA program)  (if relevant)"
