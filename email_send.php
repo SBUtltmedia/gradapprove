@@ -25,6 +25,7 @@ function sendEmail($rowId, $approvalId, $to, $firstName, $lastName, $columnH, $d
     $formattedData = "";
     foreach ($dataJson[0] as $key => $value) {
         if (!in_array($key, $excludeFields)) {
+            if ($key === "Timestamp") {$key = "Time Submitted";}
             $formattedData .= "<strong>$key:</strong> $value<br>";
         }
     }
