@@ -1,6 +1,6 @@
 const urlParams = new URLSearchParams(window.location.search);
 
-let rowId = parseInt(urlParams.get('rowId') || 1);
+let rowId = parseInt(urlParams.get('rowId') || 1)+1;
 let approvalId = parseInt(urlParams.get('approvalId')) || 0;
 let sheetId = urlParams.get('sheetId') || "";
 
