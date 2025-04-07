@@ -1,5 +1,7 @@
 <?php
-function sendEmail($rowId, $approvalId, $to, $firstName, $lastName, $columnH, $dataJson) {
+function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
+    //rowId, $approvalId, $sheetId, 
+
     $server = $_SERVER['SERVER_NAME'];
 
     if(array_key_exists('SERVER_NAME', $_SERVER)){
@@ -12,23 +14,21 @@ function sendEmail($rowId, $approvalId, $to, $firstName, $lastName, $columnH, $d
     $to = "$to";
     $subject = "$firstName $lastName has requested a thesis approval for \"$columnH\"";
 
-    $excludeFields = [
-        "Approval 1",
-        "Approval 2",
-        "Approval 3",
-        "Form Processed",
-        "Email address of thesis director/course director/GPD/ English faculty nominee (MA/BA program) for approval",
-        "Email address of second reader/committee member/English faculty nominee (MA/BA program)  (if relevant)",
-        "Email address of third reader/committee member/English faculty nominee (MA/BA program)  (if relevant)"
-    ];
-
     $formattedData = "";
-    foreach ($dataJson[0] as $key => $value) {
-        if (!in_array($key, $excludeFields)) {
-            if ($key === "Timestamp") {$key = "Time Submitted";}
-            $formattedData .= "<strong>$key:</strong> $value<br>";
+    foreach ($data[0] as $key => $value) {
+        $columnKey = strtolower($key);
+    
+        if (strpos($columnKey, 'approval') !== false || strpos($columnKey, 'email address of') !== false || strpos($columnKey, 'form processed') !== false) {
+            continue;
         }
+    
+        if (strpos($columnKey, 'timestamp') !== false) {
+            $key = "Time Submitted";
+        }
+    
+        $formattedData .= "<strong>$key:</strong> $value<br>";
     }
+
 
 
     $message = "
@@ -52,7 +52,7 @@ function sendEmail($rowId, $approvalId, $to, $firstName, $lastName, $columnH, $d
             <div class='approval-link'>
 
                 <p><strong>You can access the new record here and give your approval:</strong> 
-                <a href='https://$server/gradapprove/show_row.html?rowId=$rowId&approvalId=$approvalId' style='color: blue; text-decoration: underline;'>Approval Link</a></p>
+                <a href='https://$server/gradapprove/show_row.html?$queryString' style='color: blue; text-decoration: underline;'>Approval Link</a></p>
             </div>
         </body>
         </html>

@@ -6,6 +6,8 @@ class Spreadsheet{
 
 	private string $sheetId;
 	private Google_Service_Sheets $service;
+	public array $headers;
+	public Util $util;
 
 
 	public function __construct($sheetId)
@@ -148,6 +150,19 @@ class Spreadsheet{
 	}
 
 
+	//get the index from header name
+	public function findHeaderIndex(array $headers, string $searchKey) {
+		$searchKey = strtolower(trim($searchKey));
+		foreach ($headers as $index => $header) {
+			$normalized = strtolower(trim($header));
+			if (strpos($normalized, $searchKey) !== false) {
+				return $index;
+			}
+		}
+		return false;
+	}
+
+
 	// extract sheet ID from URL
 	public function extractSheetIdFromUrl(string $url): ?string {
 		if (preg_match('/\/d\/([a-zA-Z0-9-_]+)(?:\/|$)/', $url, $matches)) {
@@ -158,33 +173,33 @@ class Spreadsheet{
 
 
 	// get a cell vlaue by providing COLUMN NAMES and row ID
-	public function getCellFromRowByHeader(string $headerName, int $rowNumber): ?string {
-			// calculate the column index for the given header
-			$columnIndex = array_search($headerName, $this->headers);
-		
-			$columnName= $this->util->numberToColumnName($columnIndex+1);
+		public function getCellFromRowByHeader(string $headerName, int $rowNumber): ?string {
+				// calculate the column index for the given header
+				$columnIndex = array_search($headerName, $this->headers);
+			
+				$columnName= $this->util->numberToColumnName($columnIndex+1);
 
-			// defininig like "B4"
-			$cell = $columnName . $rowNumber;
-		
-			// get the cell value
-			$response = $this->service->spreadsheets_values->get($this->sheetId, $cell);
-			$value = $response->getValues()[0][0] ?? "";
-			return $value;
-		}
+				// defininig like "B4"
+				$cell = $columnName . $rowNumber;
+			
+				// get the cell value
+				$response = $this->service->spreadsheets_values->get($this->sheetId, $cell);
+				$value = $response->getValues()[0][0] ?? "";
+				return $value;
+			}
 
 
 		// function to add a new column to the end of the sheet with a given header name
-		public function addNewColumnToEnd(string $sheetName, string $newColumnName): void {
+		public function addNewColumnToEnd(string $sheetId, string $newColumnName): void {
 			$headers = $this->service->spreadsheets_values
 				->get($this->sheetId, "$sheetName!1:1")
 				->getValues()[0] ?? [];
 
 			// determine the next empty column
 			$newColumnIndex = count($headers);
-			$columnLetter = $this->columnIndexToLetter($newColumnIndex);
+			$columnLetter= $this->util->numberToColumnName($newColumnIndex+1);
 
-			// set the new header value in the first row of that column
+			// set the new header value in the first row of that column so
 			$range = "$sheetName!{$columnLetter}1";
 			$body = new Google_Service_Sheets_ValueRange([
 				'values' => [[$newColumnName]]
@@ -194,16 +209,72 @@ class Spreadsheet{
 			$this->service->spreadsheets_values->update($this->sheetId, $range, $body, $params);
 		}
 
-		// function to convert column index to A, B, Z, AA, AB
-		public function columnIndexToLetter($index): string {
-			$letter = '';
-			while ($index >= 0) {
-				$letter = chr($index % 26 + 65) . $letter;
-				$index = intval($index / 26) - 1;
-			}
-			return $letter;
+
+		public function insertColumnAtIndex(string $sheetId, string $newColumnName, int $columnIndex): void {
+			$spreadsheet = $this->service->spreadsheets->get($sheetId);
+			$sheet = $spreadsheet->getSheets()[0]; 
+			$sheetName = $sheet->getProperties()->getTitle();
+			$sheetGid = $sheet->getProperties()->getSheetId();
+		
+			// insert a blank column at the desired index, 0-based meaning A:0
+			$requests = [
+				new Google_Service_Sheets_Request([
+					'insertDimension' => [
+						'range' => [
+							'sheetId' => $sheetGid,
+							'dimension' => 'COLUMNS',
+							'startIndex' => $columnIndex,
+							'endIndex' => $columnIndex+1,
+						],
+						'inheritFromBefore' => true
+					]
+				])
+			];
+		
+			$batchUpdateRequest = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest([
+				'requests' => $requests
+			]);
+			$this->service->spreadsheets->batchUpdate($sheetId, $batchUpdateRequest);
+		
+			// now lets set the new column name in the first row
+			$columnLetter= $this->util->numberToColumnName($columnIndex+1);
+			$range = "{$sheetName}!{$columnLetter}1";
+		
+			$body = new Google_Service_Sheets_ValueRange([
+				'values' => [[$newColumnName]]
+			]);
+			$params = ['valueInputOption' => 'RAW'];
+		
+			$this->service->spreadsheets_values->update($sheetId, $range, $body, $params);
 		}
 		
 
+
+		public function getColumnLetterFromHeader($sheetId, $sheetName, $headerName, $apiKey)
+		{
+			$url = "https://sheets.googleapis.com/v4/spreadsheets/$sheetId/values/$sheetName!1:1?key=$apiKey";
+
+			$response = file_get_contents($url);
+			if ($response === false) {
+				return "Error fetching data from Google Sheets.";
+			}
+
+			$data = json_decode($response, true);
+			if (empty($data['values'][0])) {
+				return "Header row is empty.";
+			}
+
+			$headers = $data['values'][0];
+			$searchHeader = strtolower(trim($headerName));
+
+			foreach ($headers as $index => $header) {
+				if (strtolower(trim($header)) === $searchHeader) {
+					// Convert zero-based index to one-based for Util::numberToColumnName
+					return Util::numberToColumnName($index + 1);
+				}
+			}
+
+			return "Header '$headerName' not found.";
+		}
 
 }

@@ -2,11 +2,14 @@
 require 'vendor/autoload.php';
 require 'spreadsheet.php';
 
-$spreadsheetId = "1jA4Irh9G5XM4ePbWZAosnroMu0rY5vGvuc671TtykeA";
-$sheetName = "Sheet1";
 
+$spreadsheetId = $_GET["sheetId"];
 $rowId = intval($_GET["rowId"]);
 $approvalId = intval($_GET["approvalId"]);
+// $spreadsheetId = "1jA4Irh9G5XM4ePbWZAosnroMu0rY5vGvuc671TtykeA";
+$sheetName = "Sheet1";
+
+
 
 $spreadsheet = new Spreadsheet($spreadsheetId);
 

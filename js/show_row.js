@@ -1,45 +1,29 @@
 const urlParams = new URLSearchParams(window.location.search);
 
-let rowId = parseInt(urlParams.get('rowId') || 1) + 1;
+let rowId = parseInt(urlParams.get('rowId') || 1);
 let approvalId = parseInt(urlParams.get('approvalId')) || 0;
+let sheetId = urlParams.get('sheetId') || "";
 
 
-const columnMap = {
-    1: "K", // Approval1
-    2: "M", // Approval2
-    3: "O"  // Approval3
-};
+let queryString = "";
+
+urlParams.forEach((value, key) => {
+    queryString+= `${key}=${value}&`;
+});
+
+
 
 
 let landingPage = document.getElementById("landing-page");
 
 
-// addEventListener("DOMContentLoaded", () => {
-//     init();
-// });
-
-
-// function init(){
-
-//     fetch(`get_cell.php?rowId=${rowId}&approvalId=${approvalId}`)
-//         .then(response => response.json())
-//         .then(( approval_status ) =>
-
-//             // (["Yes", "No"].includes(approval_status?.trim()) && displayApprovalMessage(approval_status === "Yes")) ||
-//             fetch(`get_row.php?rowId=${rowId}&approvalId=${approvalId}`)
-//                 .then(response => response.json())
-//                 .then(displayData)
-//         )
-//         .catch(error => console.error("Error fetching data:", error));
-
-// }
-
-
 
 document.addEventListener("DOMContentLoaded", () => init());
 
+
+
 function init() {
-    fetch(`get_cell.php?rowId=${rowId}&approvalId=${approvalId}`)
+    fetch(`get_cell.php?${queryString}`)
         .then(response => response.json())
         .then(({ approval_status }) => {
             if (["Yes", "No"].includes(approval_status?.trim())) {
@@ -47,12 +31,10 @@ function init() {
                 displayApprovalMessage(isApproved);
                 return;
             }
-            return fetch(`get_row.php?rowId=${rowId}&approvalId=${approvalId}`)
+            return fetch(`get_row.php?${queryString}`)
                 .then(response => response.json())
                 .then(data => {
-                    // if (!document.querySelector(".message-container")) {
                         displayData(data);
-                    // }
                 });
         })
         .catch(error => console.error(error));
@@ -91,7 +73,6 @@ function displayData(data) {
     Object.keys(data).filter((key) => {
         return key.includes("Email address of")
     }).forEach((key,index) => {
-        // approverVal = data[approverValKeys[index]];
         approverVal = approvalStatusMap[index];
         data[key]+=approverVal;
 
@@ -141,7 +122,9 @@ function setupApprovalButtons() {
 function handleApprovalDecision(approval_status) {
     let isApproved = approval_status==="Yes";
 
-    fetch(`update_yes_no.php?rowId=${rowId}&column=${columnMap[approvalId]}&approval_status=${approval_status}`)
+    //pass the approval id number to form "Approval 1/2/3" in update_yes_no.php
+
+    fetch(`update_yes_no.php?sheetId=${sheetId}&rowId=${rowId}&approvalId=${approvalId}&approval_status=${approval_status}`)
         .then(() => displayApprovalMessage(isApproved));
 }
 

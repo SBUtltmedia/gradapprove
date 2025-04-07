@@ -51,4 +51,18 @@ class Util
         return preg_replace('/^(\'(.*)\'|"(.*)")$/', '$2$3', $text);
       } 
 
+
+    public function returnQueryString($assocArray){
+        $queryString = "";
+        foreach ($assocArray as $key => $value) {
+            $queryString.="$key=$value&";
+        }
+        //remove the last &
+        $queryString = rtrim($queryString, '&'); 
+
+        return $queryString;
+    }
+
+
+
 }

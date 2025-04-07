@@ -1,15 +1,28 @@
 <?php
 require("spreadsheet.php");
 
-$spreadsheet = new Spreadsheet("1jA4Irh9G5XM4ePbWZAosnroMu0rY5vGvuc671TtykeA");
+// $sheetId = "1A6RsAaSj6YEbwER22qyJXuQHWU43USiNj-qSSrgKdcU";
+$sheetId = $_GET["sheetId"];
+
+$spreadsheet = new Spreadsheet($sheetId);
+
 
 // $rowId = "2";
-// $column = "P";
-// $isApproved = "Yes";
-
+// $approval_status = "Yes";
+// $approvalId = "1";
 $rowId = $_GET["rowId"];
-$column = $_GET["column"];
 $approval_status = $_GET["approval_status"];
+$approvalId = $_GET["approvalId"];
 
-$spreadsheet->updateRowColumn($rowId, $column, $approval_status);
+
+
+$headers = $spreadsheet->headers;
+$approvalColumn= "Approval {$approvalId}";
+$approvalColumnIndex = $spreadsheet->findHeaderIndex($headers, $approvalColumn);
+$approvalColumnLetter = $spreadsheet->util->numberToColumnName($approvalColumnIndex + 1);
+
+
+
+
+$spreadsheet->updateRowColumn($rowId, $approvalColumnLetter, $approval_status);
 ?>
