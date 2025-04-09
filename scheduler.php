@@ -91,7 +91,7 @@ function processPendingApprovals($sheetId, $rowId) {
                 $columnH = json_decode($spreadsheetUpdate->getRangeColumn($columnHColumnLetter, $rowId, $rowId), true)[0] ?? ''; //Please select what this request is for column
 
                 if (!empty($emailAddress)) {
-                    $sheetInfo = array("rowId"=>$rowId-1, "approvalId"=>"$approvalId", "sheetId"=>"$sheetId");
+                    $sheetInfo = array("rowId"=>$rowId, "approvalId"=>"$approvalId", "sheetId"=>"$sheetId");
                     $queryString = $spreadsheetUpdate->util->returnQueryString($sheetInfo);
                     sendEmail($queryString, $emailAddress, $firstName, $lastName, $columnH, $dataJson);
                 }    
