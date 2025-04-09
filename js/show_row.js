@@ -122,9 +122,10 @@ function setupApprovalButtons() {
 function handleApprovalDecision(approval_status) {
     let isApproved = approval_status==="Yes";
 
+
     //pass the approval id number to form "Approval 1/2/3" in update_yes_no.php
 
-    fetch(`update_yes_no.php?sheetId=${sheetId}&rowId=${rowId}&approvalId=${approvalId}&approval_status=${approval_status}`)
+    fetch(`update_yes_no.php?sheetId=${sheetId}&rowId=${rowId-1}&approvalId=${approvalId}&approval_status=${approval_status}`)
         .then(() => displayApprovalMessage(isApproved));
 }
 
