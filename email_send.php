@@ -4,6 +4,8 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
 
     $server = $_SERVER['SERVER_NAME'];
 
+    $folderName = "sbuApprove";
+
     if(array_key_exists('SERVER_NAME', $_SERVER)){
         $server = $_SERVER['SERVER_NAME'];
     }
@@ -52,7 +54,7 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
             <div class='approval-link'>
 
                 <p><strong>You can access the new record here and give your approval:</strong> 
-                <a href='https://$server/gradapprove/show_row.html?$queryString' style='color: blue; text-decoration: underline;'>Approval Link</a></p>
+                <a href='https://$server/$folderName/show_row.html?$queryString' style='color: blue; text-decoration: underline;'>Approval Link</a></p>
             </div>
         </body>
         </html>

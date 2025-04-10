@@ -94,6 +94,8 @@ function processPendingApprovals($sheetId, $rowId) {
                     $queryString = $spreadsheetUpdate->util->returnQueryString($sheetInfo);
                     sendEmail($queryString, $emailAddress, $firstName, $lastName, $columnH, $dataJson);
                 }    
+
+                
                 $formProcessedHIndex = $spreadsheetUpdate->findHeaderIndex($headers, 'form processed');
                 $formProcessedColumnLetter = $spreadsheetUpdate->util->numberToColumnName($formProcessedHIndex + 1);
                 $spreadsheetUpdate->updateRowColumn($rowId, $formProcessedColumnLetter, "Yes");
