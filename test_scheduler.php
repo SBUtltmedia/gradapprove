@@ -5,7 +5,7 @@ require 'email_send.php';
 
 
 
-$dbSpreadsheetId = "1qCXZyon6chwQreXi8eBbaZ6Qmu5jWwJ2bFcvvVUmqXk";
+$dbSpreadsheetId = "18RFkENSfxNkyDJY7S68ZWnSM_Ed_eIwzq9XnbxIjMIY";
 $spreadsheet = new Spreadsheet($dbSpreadsheetId);
 
 
@@ -46,8 +46,6 @@ function processPendingApprovals($sheetId, $rowId) {
 
     $headers = $spreadsheetUpdate->headers;
     $highestRow = $spreadsheetUpdate->getHighestRow();
-
-
 
 
     for ($rowId = 2; $rowId <= $highestRow; $rowId++) {
@@ -94,6 +92,8 @@ function processPendingApprovals($sheetId, $rowId) {
                     $queryString = $spreadsheetUpdate->util->returnQueryString($sheetInfo);
                     sendEmail($queryString, $emailAddress, $firstName, $lastName, $columnH, $dataJson);
                 }    
+
+
                 $formProcessedHIndex = $spreadsheetUpdate->findHeaderIndex($headers, 'form processed');
                 $formProcessedColumnLetter = $spreadsheetUpdate->util->numberToColumnName($formProcessedHIndex + 1);
                 $spreadsheetUpdate->updateRowColumn($rowId, $formProcessedColumnLetter, "Yes");

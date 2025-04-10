@@ -250,6 +250,15 @@ class Spreadsheet{
 		
 
 
+		public function getSheetName($sheetId)
+		{
+			$spreadsheet = $this->service->spreadsheets->get($sheetId);
+			$sheetName = $spreadsheet->getProperties()->getTitle();
+
+			return $sheetName;
+		}
+
+
 		public function getColumnLetterFromHeader($sheetId, $sheetName, $headerName, $apiKey)
 		{
 			$url = "https://sheets.googleapis.com/v4/spreadsheets/$sheetId/values/$sheetName!1:1?key=$apiKey";
