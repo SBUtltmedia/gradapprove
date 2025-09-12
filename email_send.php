@@ -14,7 +14,7 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
     }
     
     $to = "$to";
-    $subject = "$firstName $lastName has requested a thesis approval for \"$columnH\"";
+    $subject = "$firstName $lastName has requested an approval for \"$columnH\"";
 
     $formattedData = "";
     foreach ($data[0] as $key => $value) {
@@ -36,7 +36,7 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
     $message = "
         <html>
         <head>
-            <title>Thesis Approval Request</title>
+            <title>Approval Request</title>
             <style>
                 body { font-family: Arial, sans-serif; line-height: 1.6; }
                 .container { background-color: #f9f9f9; padding: 15px; border-radius: 5px; }
@@ -45,9 +45,9 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
         </head>
         <body>
             <div class='container'>
-                <h3>Thesis Approval Request Details</h3>
+                <h3>Approval Request Details</h3>
                 <p><strong>Request from:</strong> $firstName $lastName</p>
-                <p><strong>Thesis Topic:</strong> $columnH</p>
+                <p><strong>Topic:</strong> $columnH</p>
                 <hr>
                 <p>$formattedData</p>
             </div>

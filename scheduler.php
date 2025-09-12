@@ -40,7 +40,7 @@ for ($rowId = 2; $rowId <= $highestRow; $rowId++) {
 
 
 
-// function to handle processed sheets in the "Record ID"
+// function to handle already once processed sheets from the "Record ID"
 function processPendingApprovals($sheetId, $rowId) {
     $spreadsheetUpdate = new Spreadsheet($sheetId);
 
@@ -56,12 +56,12 @@ function processPendingApprovals($sheetId, $rowId) {
 
     $processedCell = strtolower(trim($spreadsheetUpdate->getCellFromRowByHeader("Form Processed", $rowId)?? ""));
 
-    //if the "Form Processed is blank it means it hasnt been processed, there is a new student row so just send emails too all
+    //if the "Form Processed" is blank it means it hasnt been processed, there is a new student row so just send emails too all
     if (strpos($processedCell, "yes") === false) {
         $dataJson = json_decode($spreadsheetUpdate->getRange("A$rowId:Z$rowId", true), true);
 
 
-        //check for all the headers with "e,mail address" in their name but excluding first two columns, to send emails.
+        //check for all the headers with "email address" in their name but excluding first two columns, to send emails.
         foreach ($headers as $index => $header) {
 
             if ($index < 2) continue;
@@ -142,10 +142,18 @@ function processingNewSheets($sheetId, $rowId){
     }
 
     $headers = $spreadsheetNew->headers;
-    $lastColumnIndex = count($headers)+$columnsInserted;
-    $lastHeaderValue = (strtolower(trim($headers[$lastColumnIndex-1])));
-    if (strpos($lastHeaderValue, "form processed") === false){
-    $spreadsheetNew->insertColumnAtIndex($sheetId, "Form Processed", $lastColumnIndex);
+    echo "Looking for Form Processed new sheet";
+
+    $formProcessedFound = false;
+    foreach ($headers as $header) {
+        if (strpos(strtolower(trim($header)), "form processed") !== false) {
+            $formProcessedFound = true;
+            break;
+        }
+    }
+
+    if (!$formProcessedFound) {
+        $spreadsheetNew->insertColumnAtIndex($sheetId, "Form Processed", count($headers) + $columnsInserted);
     }
 
 
