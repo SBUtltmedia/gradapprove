@@ -41,70 +41,58 @@ for ($rowId = 2; $rowId <= $highestRow; $rowId++) {
 
 
 // function to handle already once processed sheets from the "Record ID"
-function processPendingApprovals($sheetId, $rowId) {
+function processPendingApprovals($sheetId, $mainSheetRowId) { // Renamed for clarity
     $spreadsheetUpdate = new Spreadsheet($sheetId);
 
     $headers = $spreadsheetUpdate->headers;
     $highestRow = $spreadsheetUpdate->getHighestRow();
 
+    if ($highestRow <= 1) {
+        return; // No data to process
+    }
 
+    $allDataJson = $spreadsheetUpdate->getRange("A2:Z{$highestRow}", true);
+    $allData = json_decode($allDataJson, true);
+    
+    $sheetName = $spreadsheetUpdate->getSheetName($sheetId);
 
+    $formProcessedHIndex = $spreadsheetUpdate->findHeaderIndex($headers, 'form processed');
+    if ($formProcessedHIndex === false) {
+        return;
+    }
+    $formProcessedColumnLetter = $spreadsheetUpdate->util->numberToColumnName($formProcessedHIndex + 1);
 
-    for ($rowId = 2; $rowId <= $highestRow; $rowId++) {
+    foreach ($allData as $rowIndex => $rowData) {
+        $subSheetRowId = $rowIndex + 2; // because data starts from row 2
 
-    $approvalId = 0;
+        $processedCell = strtolower(trim($rowData["Form Processed"] ?? ""));
 
-    $processedCell = strtolower(trim($spreadsheetUpdate->getCellFromRowByHeader("Form Processed", $rowId)?? ""));
+        if (strpos($processedCell, "yes") === false) {
+            $approvalId = 0;
+            $firstName = $rowData['First Name'] ?? '';
+            $lastName = $rowData['Last Name'] ?? '';
 
-    //if the "Form Processed" is blank it means it hasnt been processed, there is a new student row so just send emails too all
-    if (strpos($processedCell, "yes") === false) {
-        $dataJson = json_decode($spreadsheetUpdate->getRange("A$rowId:Z$rowId", true), true);
+            foreach ($headers as $headerIndex => $header) {
+                if ($headerIndex < 2) continue;
 
+                $headerValue = strtolower(trim($header));
 
-        //check for all the headers with "email address" in their name but excluding first two columns, to send emails.
-        foreach ($headers as $index => $header) {
+                if (strpos($headerValue, "email address") !== false) {
+                    $approvalId++;
+                    $emailAddress = $rowData[$header] ?? '';
 
-            if ($index < 2) continue;
-            $headerValue = strtolower(trim($header));
-
-
-            if (strpos($headerValue, "email address") !== false) {
-
-                $approvalId++;
-
-                $headerColumnLetter = $spreadsheetUpdate->util->numberToColumnName($index+1); //coz this method is 1-based
-                $emailAddress = json_decode($spreadsheetUpdate->getRangeColumn($headerColumnLetter, $rowId, $rowId), true)[0] ?? '';
-
-
-                $firstNameIndex = $spreadsheetUpdate->findHeaderIndex($headers, 'first name');
-                $firstNameColumnLetter = $spreadsheetUpdate->util->numberToColumnName($firstNameIndex + 1);
-                $firstName = json_decode($spreadsheetUpdate->getRangeColumn($firstNameColumnLetter, $rowId, $rowId), true)[0] ?? '';
-
-
-                $lastNameIndex = $spreadsheetUpdate->findHeaderIndex($headers, 'last name');
-                $lastNameColumnLetter = $spreadsheetUpdate->util->numberToColumnName($lastNameIndex + 1);
-                $lastName = json_decode($spreadsheetUpdate->getRangeColumn($lastNameColumnLetter, $rowId, $rowId), true)[0] ?? '';
-
-
-                $columnH = $spreadsheetUpdate->getSheetName($sheetId);
-
-
-                if (!empty($emailAddress)) {
-                    $sheetInfo = array("rowId"=>$rowId, "approvalId"=>"$approvalId", "sheetId"=>"$sheetId");
-                    $queryString = $spreadsheetUpdate->util->returnQueryString($sheetInfo);
-                    sendEmail($queryString, $emailAddress, $firstName, $lastName, $columnH, $dataJson);
-                }    
-
-                
-                $formProcessedHIndex = $spreadsheetUpdate->findHeaderIndex($headers, 'form processed');
-                $formProcessedColumnLetter = $spreadsheetUpdate->util->numberToColumnName($formProcessedHIndex + 1);
-                $spreadsheetUpdate->updateRowColumn($rowId, $formProcessedColumnLetter, "Yes");
+                    if (!empty($emailAddress)) {
+                        $sheetInfo = array("rowId" => $subSheetRowId, "approvalId" => "$approvalId", "sheetId" => "$sheetId");
+                        $queryString = $spreadsheetUpdate->util->returnQueryString($sheetInfo);
+                        sendEmail($queryString, $emailAddress, $firstName, $lastName, $sheetName, json_encode([$rowData]));
+                        
+                        // Update "Form Processed" cell for each email sent, to preserve original logic
+                        $spreadsheetUpdate->updateRowColumn($subSheetRowId, $formProcessedColumnLetter, "Yes");
+                    }
+                }
             }
         }
-
     }
-            
-    } 
 }
 
 
@@ -112,38 +100,29 @@ function processPendingApprovals($sheetId, $rowId) {
 // and last column is "Form Processed"
 function processingNewSheets($sheetId, $rowId){
     $spreadsheetNew = new Spreadsheet($sheetId);
+
+    // --- Add Approval columns ---
     $emailColumnsCount = 0;
-    $index = 0;
-
-    $columnsInserted=0;
-
+    $index = 2;
     while ($index < count($spreadsheetNew->headers)) {
-        $headers = $spreadsheetNew->headers;
-
-        if ($index < 2) {
-            $index++;
-            continue;
-        }
-
-        $headerValue = strtolower(trim($headers[$index]));
+        $headerValue = strtolower(trim($spreadsheetNew->headers[$index]));
 
         if (strpos($headerValue, "email address") !== false) {
             $emailColumnsCount++;
-
-            $nextHeader = strtolower(trim($headers[$index + 1] ?? ""));
-
-            if (strpos($nextHeader, "approval") === false) {
-                $spreadsheetNew->insertColumnAtIndex($sheetId, "Approval " . $emailColumnsCount, $index + 1+ $columnsInserted);
-                $headers = $spreadsheetNew->headers;
-                $columnsInserted++;
+            $nextHeader = $spreadsheetNew->headers[$index + 1] ?? "";
+            if (strpos(strtolower(trim($nextHeader)), "approval") === false) {
+                $spreadsheetNew->insertColumnAtIndex($sheetId, "Approval " . $emailColumnsCount, $index + 1);
+                // Re-fetch headers after modification
+                $spreadsheetNew = new Spreadsheet($sheetId); 
             }
         }
         $index++;
     }
 
+    // --- Add Form Processed column ---
+    // Re-fetch headers again to be safe
+    $spreadsheetNew = new Spreadsheet($sheetId);
     $headers = $spreadsheetNew->headers;
-    echo "Looking for Form Processed new sheet";
-
     $formProcessedFound = false;
     foreach ($headers as $header) {
         if (strpos(strtolower(trim($header)), "form processed") !== false) {
@@ -153,9 +132,8 @@ function processingNewSheets($sheetId, $rowId){
     }
 
     if (!$formProcessedFound) {
-        $spreadsheetNew->insertColumnAtIndex($sheetId, "Form Processed", count($headers) + $columnsInserted);
+        $spreadsheetNew->insertColumnAtIndex($sheetId, "Form Processed", count($headers));
     }
-
 
     processPendingApprovals($sheetId, $rowId);
 }

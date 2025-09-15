@@ -47,9 +47,20 @@ class Util
             return $letter;
         }
     }
+
+    public function columnNameToNumber($columnName)
+    {
+        $columnName = strtoupper($columnName);
+        $length = strlen($columnName);
+        $number = 0;
+        for ($i = 0; $i < $length; $i++) {
+            $number = $number * 26 + ord($columnName[$i]) - ord('A') + 1;
+        }
+        return $number;
+    }
     public function stripQuotes($text) {
         return preg_replace('/^(\'(.*)\'|"(.*)")$/', '$2$3', $text);
-      } 
+      }
 
 
     public function returnQueryString($assocArray){

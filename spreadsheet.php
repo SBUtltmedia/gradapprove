@@ -15,7 +15,7 @@ class Spreadsheet{
 
 		$this->sheetId=$sheetId;
 		$this->service=$this->getService();
-		$this->headers=$this->service->spreadsheets_values->get($this->sheetId, "A1:Z1")->getValues()[0];
+		$this->headers=$this->service->spreadsheets_values->get($this->sheetId, "1:1")->getValues()[0];
 		$this->util= new Util();
 
 	}
@@ -50,12 +50,27 @@ class Spreadsheet{
 		$values = $response->getValues();
 	
 		if ($asJson) {
-			$headers = $this->service->spreadsheets_values->get($this->sheetId, "A1:Z1")->getValues()[0];
+			if (!preg_match('/([A-Z]+)[0-9]+:([A-Z]+)[0-9]+/', $range, $matches)) {
+				// Fallback for ranges that do not match the expected format e.g. A1
+				// This will just return the values as a simple array of arrays.
+				return json_encode($values, JSON_PRETTY_PRINT);
+			}
+
+			$startColumn = $matches[1];
+			$endColumn = $matches[2];
+
+			$startColumnIndex = $this->util->columnNameToNumber($startColumn) - 1;
+			$endColumnIndex = $this->util->columnNameToNumber($endColumn) - 1;
+			$numberOfColumns = $endColumnIndex - $startColumnIndex + 1;
+
+			$slicedHeaders = array_slice($this->headers, $startColumnIndex, $numberOfColumns);
 	
 			$jsonData = [];
-			foreach ($values as $row) {
-				$rowData = array_combine($headers, array_pad($row, count($headers), null));
-				$jsonData[] = $rowData;
+			if($values){
+				foreach ($values as $row) {
+					$rowData = array_combine($slicedHeaders, array_pad($row, count($slicedHeaders), null));
+					$jsonData[] = $rowData;
+				}
 			}
 			return json_encode($jsonData, JSON_PRETTY_PRINT);
 		}
@@ -247,6 +262,8 @@ class Spreadsheet{
 		
 			$this->service->spreadsheets_values->update($sheetId, $range, $body, $params);
 		}
+
+		
 		
 
 
