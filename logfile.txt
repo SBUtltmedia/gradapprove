@@ -1,0 +1,41 @@
+priyaprakash@Priyas-Laptop SbuApproveOct20_25 % git push -u origin main --force    
+Enumerating objects: 32070, done.
+Counting objects: 100% (32070/32070), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (5228/5228), done.
+Writing objects: 100% (32070/32070), 12.88 MiB | 549.50 MiB/s, done.
+Total 32070 (delta 26670), reused 32063 (delta 26667), pack-reused 0
+remote: Resolving deltas: 100% (26670/26670), done.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Google Cloud Service Account Credentials ——————————
+remote:        locations:
+remote:          - blob id: 7322246f3c7de539c2a6936dd07c634c8ae5cdfb
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/SBUtltmedia/gradapprove/security/secret-scanning/unblock-secret/34LabILFsJkz2ZDFJnzV6oQSTY4
+remote:     
+remote:     
+remote:     ——[ WARNING ]—————————————————————————————————————————
+remote:      Scan incomplete: This push was large and we didn't finish on time.
+remote:      It can still contain undetected secrets.
+remote:     
+remote:      (?) Use the following command to find the path of the detected secret(s):
+remote:          git rev-list --objects --all | grep blobid
+remote:     ——————————————————————————————————————————————————————
+remote: 
+remote: 
+To https://github.com/SBUtltmedia/gradapprove.git
+ ! [remote rejected]   main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/SBUtltmedia/gradapprove.git'
