@@ -18,12 +18,13 @@ $sheetName = $masterSheet->getSheetName($dbSpreadsheetId);
 echo "Processing Master Sheet: $sheetName\n";
 
 // 1. Read Master Sheet headers to find column positions dynamically
-$headerData = $masterSheet->getSheetData('Sheet1!1:1');
+$masterSheetName = $masterSheet->getSheetName($dbSpreadsheetId);
+$headerData = $masterSheet->getSheetData("$masterSheetName!1:1");
 if (empty($headerData)) {
     die("Error: Master sheet is empty or inaccessible.\n");
 }
 
-print_r($headerData);
+// print_r($headerData);
 
 $headers = array_map('strtolower', array_map('trim', $headerData[0]));
 
@@ -36,7 +37,7 @@ if ($sheetIdCol === false || $processedCol === false) {
 }
 
 // Read all data from the master sheet
-$masterSheetData = $masterSheet->getSheetData('Sheet1');
+$masterSheetData = $masterSheet->getSheetData("$masterSheetName");
 
 
 $sheetsToProcess = [];
@@ -114,7 +115,7 @@ if (!empty($rowsToMarkAsProcessed)) {
     $sheetProcessedColumn = $masterSheet->util->numberToColumnName($processedCol + 1);
     foreach ($rowsToMarkAsProcessed as $rowIndex) {
         $updateData[] = [
-            'range' => 'Sheet1!' . $sheetProcessedColumn . $rowIndex,
+            'range' => "$masterSheetName!" . $sheetProcessedColumn . $rowIndex,
             'values' => [['Yes']]
         ];
     }
@@ -125,7 +126,7 @@ echo "Scheduler finished.\n";
 
 function processingNewSheets(array $sheetData): array
 {
-    print_r("Processing New Sheet Structure...\n");
+    // print_r("Processing New Sheet Structure...\n");
 
     $originalHeaders = $sheetData[0];
     $dataRows = array_slice($sheetData, 1);
@@ -144,8 +145,8 @@ function processingNewSheets(array $sheetData): array
             $nextHeader = $originalHeaders[$index + 1] ?? null;
             if ($nextHeader === null || strpos(strtolower(trim($nextHeader)), "approval") === false) {
                 $newHeaders[] = "Approval " . $emailColCount;
-                print_r("Adding new header: Approval " . $emailColCount . "\n");
-                print_r($newHeaders)    ;
+                // print_r("Adding new header: Approval " . $emailColCount . "\n");
+                // print_r($newHeaders)    ;
                 $headerMap[] = -1; // Mark this as a new column
             }
         }
@@ -227,7 +228,7 @@ function processPendingApprovals(array $sheetData, string $sheetId, string $spre
                     $array_combine[] = array_pad($sheetData[$i], count($headers), '');
                     $rowDataJson = json_encode($array_combine);
 
-                    print_r("Preparing to send email to $emailAddress for $firstName $lastName\n");
+                    // print_r("Preparing to send email to $emailAddress for $firstName $lastName\n");
                     sendEmail($queryString, $emailAddress, $firstName, $lastName, $spreadSheetTitle, $rowDataJson);
                 }
             }
