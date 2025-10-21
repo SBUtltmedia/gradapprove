@@ -7,6 +7,9 @@ require 'email_send.php';
 
 $dbSpreadsheetId = "1qCXZyon6chwQreXi8eBbaZ6Qmu5jWwJ2bFcvvVUmqXk";
 
+// print_r($_ENV);
+// exit;
+
 if (array_key_exists('DDEV_USER',$_ENV)) {  
     $dbSpreadsheetId = "1eEGRFrrd93mKzseQEyO5eIrBvTfFHWWhs3UrtS_-HKI";
 }

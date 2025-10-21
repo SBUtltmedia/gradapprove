@@ -205,7 +205,7 @@ class Spreadsheet{
 
 
 		// function to add a new column to the end of the sheet with a given header name
-		public function addNewColumnToEnd(string $sheetId, string $newColumnName): void {
+		public function addNewColumnToEnd(string $newColumnName): void {
 			$headers = $this->service->spreadsheets_values
 				->get($this->sheetId, "$sheetName!1:1")
 				->getValues()[0] ?? [];
@@ -267,9 +267,9 @@ class Spreadsheet{
 		
 
 
-		public function getSheetName($sheetId)
+		public function getSheetName()
 		{
-			$spreadsheet = $this->service->spreadsheets->get($sheetId);
+			$spreadsheet = $this->service->spreadsheets->get($this->sheetId);
 			$sheets = $spreadsheet->getSheets();
 			$sheetName = $sheets[0]->getProperties()->getTitle(); 
 
@@ -277,9 +277,9 @@ class Spreadsheet{
 		}
 
 
-		public function getColumnLetterFromHeader($sheetId, $sheetName, $headerName, $apiKey)
+		public function getColumnLetterFromHeader($sheetName, $headerName, $apiKey)
 		{
-			$url = "https://sheets.googleapis.com/v4/spreadsheets/$sheetId/values/$sheetName!1:1?key=$apiKey";
+			$url = "https://sheets.googleapis.com/v4/spreadsheets/$this->sheetId/values/$sheetName!1:1?key=$apiKey";
 
 			$response = file_get_contents($url);
 			if ($response === false) {
