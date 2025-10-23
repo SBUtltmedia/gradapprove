@@ -10,7 +10,7 @@ $dbSpreadsheetId = "1qCXZyon6chwQreXi8eBbaZ6Qmu5jWwJ2bFcvvVUmqXk";
 // print_r($_ENV);
 // exit;
 
-if (array_key_exists('DDEV_USER',$_ENV)) {  
+if (array_key_exists('DDEV_USER', $_ENV)) {
     $dbSpreadsheetId = "1eEGRFrrd93mKzseQEyO5eIrBvTfFHWWhs3UrtS_-HKI";
 }
 
@@ -46,7 +46,8 @@ $masterSheetData = $masterSheet->getSheetData("$masterSheetName");
 $sheetsToProcess = [];
 if ($masterSheetData) {
     foreach ($masterSheetData as $rowIndex => $row) {
-        if ($rowIndex == 0) continue; // Skip header row
+        if ($rowIndex == 0)
+            continue; // Skip header row
 
         $sheetId = $row[$sheetIdCol] ?? null;
         // print_r($sheetId);
@@ -145,12 +146,15 @@ function processingNewSheets(array $sheetData): array
 
         if (strpos(strtolower(trim($header)), "email address") !== false) {
             $emailColCount++;
-            $nextHeader = $originalHeaders[$index + 1] ?? null;
-            if ($nextHeader === null || strpos(strtolower(trim($nextHeader)), "approval") === false) {
-                $newHeaders[] = "Approval " . $emailColCount;
-                // print_r("Adding new header: Approval " . $emailColCount . "\n");
-                // print_r($newHeaders)    ;
-                $headerMap[] = -1; // Mark this as a new column
+
+            if ($emailColCount > 1) {
+                $nextHeader = $originalHeaders[$index + 1] ?? null;
+                if ($nextHeader === null || strpos(strtolower(trim($nextHeader)), "approval") === false) {
+                    $newHeaders[] = "Approval " . $emailColCount-1;
+                    // print_r("Adding new header: Approval " . $emailColCount . "\n");
+                    // print_r($newHeaders)    ;
+                    $headerMap[] = -1; // Mark this as a new column
+                }
             }
         }
     }
@@ -196,9 +200,12 @@ function processPendingApprovals(array $sheetData, string $sheetId, string $spre
     // Find header indices once
     foreach ($headers as $index => $header) {
         $lowerHeader = strtolower(trim($header));
-        if (strpos($lowerHeader, "form processed") !== false) $formProcessedIndex = $index;
-        if (strpos($lowerHeader, "first name") !== false) $firstNameIndex = $index;
-        if (strpos($lowerHeader, "last name") !== false) $lastNameIndex = $index;
+        if (strpos($lowerHeader, "form processed") !== false)
+            $formProcessedIndex = $index;
+        if (strpos($lowerHeader, "first name") !== false)
+            $firstNameIndex = $index;
+        if (strpos($lowerHeader, "last name") !== false)
+            $lastNameIndex = $index;
     }
 
     if ($formProcessedIndex === -1) {

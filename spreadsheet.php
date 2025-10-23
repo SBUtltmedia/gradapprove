@@ -205,24 +205,24 @@ class Spreadsheet{
 
 
 		// function to add a new column to the end of the sheet with a given header name
-		public function addNewColumnToEnd(string $newColumnName): void {
-			$headers = $this->service->spreadsheets_values
-				->get($this->sheetId, "$sheetName!1:1")
-				->getValues()[0] ?? [];
+		// public function addNewColumnToEnd(string $newColumnName): void {
+		// 	$headers = $this->service->spreadsheets_values
+		// 		->get($this->sheetId, "$sheetName!1:1")
+		// 		->getValues()[0] ?? [];
 
-			// determine the next empty column
-			$newColumnIndex = count($headers);
-			$columnLetter= $this->util->numberToColumnName($newColumnIndex+1);
+		// 	// determine the next empty column
+		// 	$newColumnIndex = count($headers);
+		// 	$columnLetter= $this->util->numberToColumnName($newColumnIndex+1);
 
-			// set the new header value in the first row of that column so
-			$range = "$sheetName!{$columnLetter}1";
-			$body = new Google_Service_Sheets_ValueRange([
-				'values' => [[$newColumnName]]
-			]);
+		// 	// set the new header value in the first row of that column so
+		// 	$range = "$sheetName!{$columnLetter}1";
+		// 	$body = new Google_Service_Sheets_ValueRange([
+		// 		'values' => [[$newColumnName]]
+		// 	]);
 
-			$params = ['valueInputOption' => 'RAW'];
-			$this->service->spreadsheets_values->update($this->sheetId, $range, $body, $params);
-		}
+		// 	$params = ['valueInputOption' => 'RAW'];
+		// 	$this->service->spreadsheets_values->update($this->sheetId, $range, $body, $params);
+		// }
 
 
 		// public function insertColumnAtIndex(string $sheetId, string $newColumnName, int $columnIndex): void {
@@ -277,32 +277,32 @@ class Spreadsheet{
 		}
 
 
-		public function getColumnLetterFromHeader($sheetName, $headerName, $apiKey)
-		{
-			$url = "https://sheets.googleapis.com/v4/spreadsheets/$this->sheetId/values/$sheetName!1:1?key=$apiKey";
+		// public function getColumnLetterFromHeader($sheetName, $headerName, $apiKey)
+		// {
+		// 	$url = "https://sheets.googleapis.com/v4/spreadsheets/$this->sheetId/values/$sheetName!1:1?key=$apiKey";
 
-			$response = file_get_contents($url);
-			if ($response === false) {
-				return "Error fetching data from Google Sheets.";
-			}
+		// 	$response = file_get_contents($url);
+		// 	if ($response === false) {
+		// 		return "Error fetching data from Google Sheets.";
+		// 	}
 
-			$data = json_decode($response, true);
-			if (empty($data['values'][0])) {
-				return "Header row is empty.";
-			}
+		// 	$data = json_decode($response, true);
+		// 	if (empty($data['values'][0])) {
+		// 		return "Header row is empty.";
+		// 	}
 
-			$headers = $data['values'][0];
-			$searchHeader = strtolower(trim($headerName));
+		// 	$headers = $data['values'][0];
+		// 	$searchHeader = strtolower(trim($headerName));
 
-			foreach ($headers as $index => $header) {
-				if (strtolower(trim($header)) === $searchHeader) {
-					// Convert zero-based index to one-based for Util::numberToColumnName
-					return Util::numberToColumnName($index + 1);
-				}
-			}
+		// 	foreach ($headers as $index => $header) {
+		// 		if (strtolower(trim($header)) === $searchHeader) {
+		// 			// Convert zero-based index to one-based for Util::numberToColumnName
+		// 			return Util::numberToColumnName($index + 1);
+		// 		}
+		// 	}
 
-			return "Header '$headerName' not found.";
-		}
+		// 	return "Header '$headerName' not found.";
+		// }
 
 	public function getSheetData($range)
 	{
