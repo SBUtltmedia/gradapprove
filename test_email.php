@@ -1,5 +1,5 @@
 <?php
-$to = "recipient@example.com";
+$to = "priya.prakash@stonybrook.edu";
 $subject = "Test Email from PHP";
 $message = "Hello Priya, this is a test email sent using PHP's mail() function.";
 $headers = "From: sender@example.com\r\n";
@@ -11,4 +11,5 @@ if (mail($to, $subject, $message, $headers)) {
 } else {
     echo "Email sending failed.";
 }
+
 ?>

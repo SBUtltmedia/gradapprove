@@ -213,8 +213,12 @@ function processPendingApprovals(array $sheetData, string $sheetId, string $spre
     }
 
     $emailColumnIndices = [];
+
     foreach ($headers as $index => $header) {
         if (strpos(strtolower(trim($header)), "email address") !== false) {
+
+
+
             $emailColumnIndices[] = $index;
         }
     }
@@ -227,23 +231,22 @@ function processPendingApprovals(array $sheetData, string $sheetId, string $spre
             $firstName = ($firstNameIndex !== -1) ? ($sheetData[$i][$firstNameIndex] ?? '') : '';
             $lastName = ($lastNameIndex !== -1) ? ($sheetData[$i][$lastNameIndex] ?? '') : '';
             // $array_combine = [$headers];
-            foreach ($emailColumnIndices as $emailIndex) {
+            $emailIndicesToProcess = array_slice($emailColumnIndices, 1);
+            foreach ($emailIndicesToProcess as $emailIndex) {
                 $approvalId++;
                 $emailAddress = $sheetData[$i][$emailIndex] ?? '';
 
                 if (!empty($emailAddress)) {
                     $sheetInfo = ["rowId" => $i + 1, "approvalId" => $approvalId, "sheetId" => $sheetId];
                     $queryString = (new Util())->returnQueryString($sheetInfo);
-                    $array_combine[] = $sheetData[$i];
-                    $array_combine[] = array_pad($sheetData[$i], count($headers), '');
-                    $rowDataJson = json_encode($array_combine);
+                    $rawRowData = $sheetData[$i];
+                    $paddedRowData = array_pad($rawRowData, count($headers), '');
+                    $rowDataAssociative = array_combine($headers, $paddedRowData);
+                    $rowDataForEmail = [$rowDataAssociative];
 
-                    // print_r("Preparing to send email to $emailAddress for $firstName $lastName\n");
-                    sendEmail($queryString, $emailAddress, $firstName, $lastName, $spreadSheetTitle, $rowDataJson);
+                    sendEmail($queryString, $emailAddress, $firstName, $lastName, $spreadSheetTitle, $rowDataForEmail);
                 }
             }
-            // // Mark row as processed in the array
-            // print_r($sheetData[$i][$formProcessedIndex]);
 
             $sheetData[$i] = $sheetData[$i] + array_fill(0, count($headers), '');
             $sheetData[$i][$formProcessedIndex] = "Yes";

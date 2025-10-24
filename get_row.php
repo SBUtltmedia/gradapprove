@@ -2,6 +2,9 @@
 require 'vendor/autoload.php';
 require 'spreadsheet.php';
 
+// print_r($_GET);
+// exit;
+
 
 $spreadsheetId = $_GET["sheetId"];
 $rowId = intval($_GET["rowId"]);

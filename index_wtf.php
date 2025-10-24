@@ -1,4 +1,4 @@
-<!-- <?php
+<?php
 require("spreadsheet.php");
 
 $spreadsheet = new Spreadsheet("1PYWpfz4qNRZxb7ni7ybDVa7Tcs33NcBiHpoxrNXdSxo");
@@ -97,4 +97,4 @@ $newEnrollments = $currentFillRowId - $lastFillRowId;
     </table>
 
 </body>
-</html> -->
+</html> 

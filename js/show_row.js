@@ -70,13 +70,18 @@ function displayData(data) {
                " yet to Approve";
     });
 
-    Object.keys(data).filter((key) => {
-        return key.includes("Email address of")
-    }).forEach((key,index) => {
-        approverVal = approvalStatusMap[index];
-        data[key]+=approverVal;
+    let emailCount = 0; // Initialize counter
 
-        delete data[approverValKeys[index]];
+    Object.keys(data).filter((key) => {
+        return key.toLowerCase().includes("email address")
+    }).forEach((key,index) => {
+        emailCount++;
+        if (emailCount > 1) { // Only process if it's the second or subsequent email address
+            approverVal = approvalStatusMap[index-1];
+            data[key]+=approverVal;
+
+        delete data[approverValKeys[index-1]];
+        }
     })
 
     Object.keys(data).forEach((item) => {

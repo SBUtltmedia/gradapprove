@@ -1,6 +1,9 @@
 <?php
 require("spreadsheet.php");
 
+// print_r($_GET);
+// exit;   
+
 // $sheetId = "1A6RsAaSj6YEbwER22qyJXuQHWU43USiNj-qSSrgKdcU";
 $sheetId = $_GET["sheetId"];
 

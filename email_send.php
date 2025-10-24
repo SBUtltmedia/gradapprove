@@ -1,18 +1,18 @@
 <?php
 function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
-    print_r("Sending email to $to for $firstName $lastName regarding $columnH\n");
+    // print_r("Sending email to $to for $firstName $lastName regarding $columnH\n");
     //rowId, $approvalId, $sheetId, 
 
-    $server = $_SERVER['SERVER_NAME'];
+    $server = $_ENV['VIRTUAL_HOST'] ?? 'apps.tlt.stonybrook.edu';
 
     $folderName = "sbuApprove";
 
-    if(array_key_exists('SERVER_NAME', $_SERVER)){
-        $server = $_SERVER['SERVER_NAME'];
-    }
-    else{
-        $server = "apps.tlt.stonybrook.edu";
-    }
+    // if(array_key_exists('SERVER_NAME', $_SERVER)){
+    //     $server = $_SERVER['SERVER_NAME'];
+    // }
+    // else{
+    //     $server = "apps.tlt.stonybrook.edu";
+    // }
     
     $to = "$to";
     $subject = "$firstName $lastName has requested an approval for \"$columnH\"";
@@ -67,7 +67,7 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
                "Content-Type: text/html; charset=UTF-8\r\n" .
                "X-Mailer: PHP/" . phpversion();
 
-    print_r("Email prepared. Sending now...\n");
+    // print_r("Email prepared. Sending now...\n");
     // mail("priya@gmail.com", "Here is my first email", "Message", $headers);
 
     mail($to, $subject, $message, $headers);
