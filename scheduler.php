@@ -139,6 +139,13 @@ function processingNewSheets(array $sheetData): array
     $emailColCount = 0;
 
 
+    $maxApprovalNum = 0;
+    foreach ($originalHeaders as $header) {
+        if (preg_match('/^Approval\\s*(\\d+)/i', trim($header), $matches)) {
+            $maxApprovalNum = max($maxApprovalNum, (int)$matches[1]);
+        }
+    }
+
     // 1. Build the new header row and a map to the old header indices
     foreach ($originalHeaders as $index => $header) {
         $newHeaders[] = $header;
@@ -150,7 +157,8 @@ function processingNewSheets(array $sheetData): array
             if ($emailColCount > 1) {
                 $nextHeader = $originalHeaders[$index + 1] ?? null;
                 if ($nextHeader === null || strpos(strtolower(trim($nextHeader)), "approval") === false) {
-                    $newHeaders[] = "Approval " . $emailColCount-1;
+                    $maxApprovalNum++;
+                    $newHeaders[] = "Approval " . $maxApprovalNum;
                     // print_r("Adding new header: Approval " . $emailColCount . "\n");
                     // print_r($newHeaders)    ;
                     $headerMap[] = -1; // Mark this as a new column
