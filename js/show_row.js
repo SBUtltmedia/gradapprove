@@ -60,7 +60,7 @@ function displayData(data) {
 
 
     let approverValKeys = Object.keys(data).filter((key) => {
-        return key.includes("Approval")
+        return key.toLowerCase().includes("approval")
     })
 
     let approvalStatusMap = approverValKeys.map(key => {
@@ -70,7 +70,7 @@ function displayData(data) {
                " yet to Approve";
     });
 
-    let emailCount = 0; // Initialize counter
+    let emailCount = 0;
 
     Object.keys(data).filter((key) => {
         return key.toLowerCase().includes("email address")
@@ -90,7 +90,13 @@ function displayData(data) {
 
         let label = document.createElement("div");
         label.classList.add("label");
-        label.innerText = item.trim().endsWith(":") ? item.trim() : item.trim() + ":";
+
+        let displayKey = item.trim();
+        displayKey = displayKey.replace(/\s~[0-9]+$/, '');
+
+        label.innerText = displayKey.endsWith(":") ? displayKey : displayKey + ":";
+
+        // label.innerText = item.trim().endsWith(":") ? item.trim() : item.trim() + ":";
 
         let value = document.createElement("div");
         value.classList.add("value");

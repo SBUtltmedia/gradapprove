@@ -52,6 +52,7 @@ if ($masterSheetData) {
         $sheetId = $row[$sheetIdCol] ?? null;
         // print_r($sheetId);
         $processedStatus = strtolower(trim($row[$processedCol] ?? ''));
+
         // print_r($processedStatus);
 
 
@@ -81,7 +82,6 @@ foreach ($sheetsToProcess as $sheetInfo) {
 
     $subSheetData = $subSheet->getSheetData($sheetQuery);
 
-
     if (empty($subSheetData)) {
         if ($isNew) {
             $rowsToMarkAsProcessed[] = $sheetInfo['masterSheetRow'];
@@ -92,12 +92,17 @@ foreach ($sheetsToProcess as $sheetInfo) {
     $originalHeaders = $subSheetData[0];
     $modifiedData = $subSheetData;
 
+    // print_r($modifiedData);
+    // exit;
+
     if ($isNew) {
+        // print_r("Processing new sheet with ID: $sheetId\n");
         $modifiedData = processingNewSheets($modifiedData);
+        // print_r($modifiedData);
+        // exit;
         $rowsToMarkAsProcessed[] = $sheetInfo['masterSheetRow'];
     }
 
-    // This function now works on the data array
     $result = processPendingApprovals($modifiedData, $sheetId, $spreadSheetTitle);
     $finalData = $result['data'];
 
@@ -130,71 +135,65 @@ echo "Scheduler finished.\n";
 
 function processingNewSheets(array $sheetData): array
 {
-    // print_r("Processing New Sheet Structure...\n");
-
     $originalHeaders = $sheetData[0];
     $dataRows = array_slice($sheetData, 1);
     $newHeaders = [];
     $headerMap = []; // Maps new header index to old header index, -1 for new columns
-    $emailColCount = 0;
+    $formProcessedFound = false;
 
 
-    $maxApprovalNum = 0;
-    foreach ($originalHeaders as $header) {
-        if (preg_match('/^Approval\\s*(\\d+)/i', trim($header), $matches)) {
-            $maxApprovalNum = max($maxApprovalNum, (int)$matches[1]);
-        }
-    }
+    $approvalCount = 0;
 
     // 1. Build the new header row and a map to the old header indices
-    foreach ($originalHeaders as $index => $header) {
-        $newHeaders[] = $header;
-        $headerMap[] = $index;
-
-        if (strpos(strtolower(trim($header)), "email address") !== false) {
-            $emailColCount++;
-
-            if ($emailColCount > 1) {
-                $nextHeader = $originalHeaders[$index + 1] ?? null;
-                if ($nextHeader === null || strpos(strtolower(trim($nextHeader)), "approval") === false) {
-                    $maxApprovalNum++;
-                    $newHeaders[] = "Approval " . $maxApprovalNum;
-                    // print_r("Adding new header: Approval " . $emailColCount . "\n");
-                    // print_r($newHeaders)    ;
-                    $headerMap[] = -1; // Mark this as a new column
-                }
-            }
-        }
-    }
-
-    // 2. Add 'Form Processed' if it doesn't exist
-    $formProcessedFound = false;
-    foreach ($newHeaders as $header) {
-        if (strpos(strtolower(trim($header)), "form processed") !== false) {
+    foreach ($originalHeaders as $index => $header) {      
+        
+        if ($formProcessedFound === false && 
+            strpos(strtolower(trim($header)), "form processed") !== false) {
             $formProcessedFound = true;
-            break;
+            $headerMap[] = $index;
+            $newHeaders[] = $header;
         }
+
+        elseif (strpos(strtolower(trim($header)), "approval") !== false) {
+            $approvalCount++;
+            $newHeaders[] = "Approval " . ($approvalCount);
+            $headerMap[] = $index;
+        }
+
+        elseif (strpos(strtolower(trim($header)), "email address") !== false && 
+                strpos(strtolower(trim($originalHeaders[$index+1])), "approval") === false  && 
+                    $index>2 )  {
+                        $newHeaders[] = $header;
+                        $newHeaders[] = "Approval " . ($approvalCount+1);
+                        $headerMap[] = $index;
+                        $headerMap[] = -1;
+                        $approvalCount++;
+        }
+        else{
+            $headerMap[] = $index;
+            $newHeaders[] = $header;
+        }
+
     }
+
     if (!$formProcessedFound) {
         $newHeaders[] = "Form Processed";
         $headerMap[] = -1;
-    }
+    }   
+    
 
-    // 3. Build the new data rows using the map
     $newDataRows = [];
-    foreach ($dataRows as $originalRow) {
+    foreach ($dataRows as $currDataRows) {
         $newRow = [];
-        foreach ($headerMap as $oldIndex) {
-            if ($oldIndex !== -1) {
-                $newRow[] = $originalRow[$oldIndex] ?? '';
+        foreach ($headerMap as $headerColIndex) {
+            if ($headerColIndex !== -1) {
+                $newRow[] = $currDataRows[$headerColIndex] ?? '';
             } else {
-                $newRow[] = ''; // Add a blank cell for new columns
+                $newRow[] = ''; 
             }
         }
         $newDataRows[] = $newRow;
     }
-
-    // 4. Combine the new headers and new data rows into the final sheet data
     return array_merge([$newHeaders], $newDataRows);
 }
 
@@ -224,40 +223,68 @@ function processPendingApprovals(array $sheetData, string $sheetId, string $spre
 
     foreach ($headers as $index => $header) {
         if (strpos(strtolower(trim($header)), "email address") !== false) {
-
-
-
             $emailColumnIndices[] = $index;
         }
     }
 
+    $keyCounts = [];
+
+    foreach ($headers as $index => $key) {
+        $originalKey = $key; //original current key with no changes, untouched
+        $allLowerKey = trim(strtolower($key)); 
+
+        $keyCounts[$allLowerKey] = ($keyCounts[$allLowerKey] ?? 0) + 1;
+
+        // if the count is > 1 append the count to make the key unique
+        if ($keyCounts[$allLowerKey] > 1) {
+            // append the count like "Email Address 2", "Email Address 3")
+            $originalKey = $key . ' ~' . $keyCounts[$allLowerKey];
+        }
+        
+        // update the header in the sheetData[0]
+        $sheetData[0][$index] = $originalKey;
+    }
+
+
     for ($i = 1; $i < count($sheetData); $i++) {
+
         $processedStatus = strtolower(trim($sheetData[$i][$formProcessedIndex] ?? ''));
 
         if (strpos($processedStatus, "yes") === false) {
             $approvalId = 0;
             $firstName = ($firstNameIndex !== -1) ? ($sheetData[$i][$firstNameIndex] ?? '') : '';
             $lastName = ($lastNameIndex !== -1) ? ($sheetData[$i][$lastNameIndex] ?? '') : '';
-            // $array_combine = [$headers];
-            $emailIndicesToProcess = array_slice($emailColumnIndices, 1);
+            $emailIndicesToProcess = array_slice($emailColumnIndices, 1); //Eliminate the first email address
             foreach ($emailIndicesToProcess as $emailIndex) {
                 $approvalId++;
                 $emailAddress = $sheetData[$i][$emailIndex] ?? '';
-
                 if (!empty($emailAddress)) {
                     $sheetInfo = ["rowId" => $i + 1, "approvalId" => $approvalId, "sheetId" => $sheetId];
                     $queryString = (new Util())->returnQueryString($sheetInfo);
                     $rawRowData = $sheetData[$i];
                     $paddedRowData = array_pad($rawRowData, count($headers), '');
-                    $rowDataAssociative = array_combine($headers, $paddedRowData);
-                    $rowDataForEmail = [$rowDataAssociative];
+                    // print_r($rawRowData);
+                    // print_r($paddedRowData);
+                    // exit;
+                    // $rowDataAssociative = array_combine($headers, $paddedRowData);
+                    $rowDataAssociative = array_map(null, $headers, $paddedRowData);
+                    // print_r($rowDataAssociative);
+                    // $rowDataForEmail = [$rowDataAssociative];
+                    // print_r($rowDataForEmail);
+                    // exit;
 
-                    sendEmail($queryString, $emailAddress, $firstName, $lastName, $spreadSheetTitle, $rowDataForEmail);
+                    // print_r($rowDataForEmail);
+                    // exit;
+
+                    sendEmail($queryString, $emailAddress, $firstName, $lastName, $spreadSheetTitle, $rowDataAssociative);
                 }
             }
 
             $sheetData[$i] = $sheetData[$i] + array_fill(0, count($headers), '');
             $sheetData[$i][$formProcessedIndex] = "Yes";
+
+            // print_r($sheetData);
+            // exit;
         }
     }
 

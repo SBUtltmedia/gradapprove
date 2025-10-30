@@ -1,8 +1,5 @@
 <?php
 function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
-    // print_r("Sending email to $to for $firstName $lastName regarding $columnH\n");
-    //rowId, $approvalId, $sheetId, 
-
     $server = $_ENV['VIRTUAL_HOST'] ?? 'apps.tlt.stonybrook.edu';
 
     $folderName = "sbuApprove";
@@ -11,26 +8,22 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
     if ($server === 'apps.tlt.stonybrook.edu') {
         $approvalLink = "https://$server/$folderName/show_row.html?$queryString";
     }
-
-    // if(array_key_exists('SERVER_NAME', $_SERVER)){
-    //     $server = $_SERVER['SERVER_NAME'];
-    // }
-    // else{
-    //     $server = "apps.tlt.stonybrook.edu";
-    // }
     
     $to = "$to";
     $subject = "$firstName $lastName has requested an approval for \"$columnH\"";
 
     $formattedData = "";
-    foreach ($data[0] as $key => $value) {
-        $columnKey = strtolower($key);
-    
-        if (strpos($columnKey, 'approval') !== false || strpos($columnKey, 'email address of') !== false || strpos($columnKey, 'form processed') !== false) {
+    foreach ($data as $pair) {
+        $key = $pair[0]; //header is at 0 index
+        $value = $pair[1]; //value is at 1 index
+
+    // foreach ($data[0] as $key => $value) {
+
+        if (stripos($key, 'approval') !== false || stripos($key, 'form processed') !== false) {
             continue;
         }
     
-        if (strpos($columnKey, 'timestamp') !== false) {
+        if (stripos($key, 'timestamp') !== false) {
             $key = "Time Submitted";
         }
     
@@ -72,8 +65,6 @@ function sendEmail($queryString, $to, $firstName, $lastName, $columnH, $data) {
                "Content-Type: text/html; charset=UTF-8\r\n" .
                "X-Mailer: PHP/" . phpversion();
 
-    // print_r("Email prepared. Sending now...\n");
-    // mail("priya@gmail.com", "Here is my first email", "Message", $headers);
 
     mail($to, $subject, $message, $headers);
 }
