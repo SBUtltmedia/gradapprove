@@ -137,64 +137,115 @@ function processingNewSheets(array $sheetData): array
 {
     $originalHeaders = $sheetData[0];
     $dataRows = array_slice($sheetData, 1);
-    $newHeaders = [];
-    $headerMap = []; // Maps new header index to old header index, -1 for new columns
-    $formProcessedFound = false;
 
+    $baseHeaders = [];
+    $baseHeaderMap = [];
+    $movedHeaders = [];
+    $movedHeaderMap = [];
 
-    $approvalCount = 0;
-
-    // 1. Build the new header row and a map to the old header indices
-    foreach ($originalHeaders as $index => $header) {      
-        
-        if ($formProcessedFound === false && 
-            strpos(strtolower(trim($header)), "form processed") !== false) {
-            $formProcessedFound = true;
-            $headerMap[] = $index;
-            $newHeaders[] = $header;
+    // 1. Separate form-related columns from script-related columns
+    foreach ($originalHeaders as $index => $header) {
+        $lowerHeader = strtolower(trim($header));
+        if (strpos($lowerHeader, "approval") !== false || strpos($lowerHeader, "form processed") !== false) {
+            $movedHeaders[] = $header;
+            $movedHeaderMap[] = $index;
+        } else {
+            $baseHeaders[] = $header;
+            $baseHeaderMap[] = $index;
         }
-
-        elseif (strpos(strtolower(trim($header)), "approval") !== false) {
-            $approvalCount++;
-            $newHeaders[] = "Approval " . ($approvalCount);
-            $headerMap[] = $index;
-        }
-
-        elseif (strpos(strtolower(trim($header)), "email address") !== false && 
-                strpos(strtolower(trim($originalHeaders[$index+1])), "approval") === false  && 
-                    $index>2 )  {
-                        $newHeaders[] = $header;
-                        $newHeaders[] = "Approval " . ($approvalCount+1);
-                        $headerMap[] = $index;
-                        $headerMap[] = -1;
-                        $approvalCount++;
-        }
-        else{
-            $headerMap[] = $index;
-            $newHeaders[] = $header;
-        }
-
     }
 
-    if (!$formProcessedFound) {
-        $newHeaders[] = "Form Processed";
-        $headerMap[] = -1;
-    }   
-    
+    $formProcessedFound = false;
+    foreach ($movedHeaders as $h) {
+        if (strpos(strtolower(trim($h)), "form processed") !== false) {
+            $formProcessedFound = true;
+            break;
+        }
+    }
 
-    $newDataRows = [];
-    foreach ($dataRows as $currDataRows) {
-        $newRow = [];
-        foreach ($headerMap as $headerColIndex) {
-            if ($headerColIndex !== -1) {
-                $newRow[] = $currDataRows[$headerColIndex] ?? '';
-            } else {
-                $newRow[] = ''; 
+    // 2. Identify missing "Approval" columns that need to be added
+    $originalHeaderCount = count($originalHeaders);
+    for ($i = 0; $i < $originalHeaderCount; $i++) {
+        $header = $originalHeaders[$i];
+        if (strpos(strtolower(trim($header)), "email address") !== false && $i > 2) {
+            $nextIsApproval = ($i + 1 < $originalHeaderCount) && (strpos(strtolower(trim($originalHeaders[$i + 1])), "approval") !== false);
+            if (!$nextIsApproval) {
+                // Queue up a new "Approval" column. Mark it as new.
+                $movedHeaders[] = "Approval new"; // Special name to signify it's new
+                $movedHeaderMap[] = -1; // No old data to map from
             }
         }
+    }
+
+    // 3. Re-number and organize all "Approval" and "Form Processed" headers
+    $approvalCount = 0;
+    $finalApprovalHeaders = [];
+    $formProcessedHeader = null;
+
+    if (!$formProcessedFound) {
+        $formProcessedHeader = "Form Processed";
+    }
+
+    foreach ($movedHeaders as $header) {
+        $lowerHeader = strtolower(trim($header));
+        if (strpos($lowerHeader, "form processed") !== false) {
+            $formProcessedHeader = "Form Processed";
+        } elseif (strpos($lowerHeader, "approval") !== false) {
+            $approvalCount++;
+            $finalApprovalHeaders[] = "Approval " . $approvalCount;
+        }
+    }
+
+    // 4. Construct final header row
+    $finalHeaders = $baseHeaders;
+    if ($formProcessedHeader) {
+        $finalHeaders[] = $formProcessedHeader;
+    }
+    $finalHeaders = array_merge($finalHeaders, $finalApprovalHeaders);
+
+    // 5. Build the new data rows based on the new header order
+    $newDataRows = [];
+    foreach ($dataRows as $oldRow) {
+        $newRow = [];
+
+        // Add data for base columns
+        foreach ($baseHeaderMap as $oldIndex) {
+            $newRow[] = $oldRow[$oldIndex] ?? '';
+        }
+
+        // Add data for "Form Processed"
+        if ($formProcessedHeader) {
+            $formProcessedData = '';
+            foreach ($movedHeaderMap as $i => $oldIndex) {
+                if ($oldIndex !== -1 && strpos(strtolower(trim($movedHeaders[$i])), "form processed") !== false) {
+                    $formProcessedData = $oldRow[$oldIndex] ?? '';
+                    break;
+                }
+            }
+            $newRow[] = $formProcessedData;
+        }
+
+        // Add data for "Approval" columns
+        $approvalData = [];
+        foreach ($movedHeaderMap as $i => $oldIndex) {
+            if ($oldIndex !== -1 && strpos(strtolower(trim($movedHeaders[$i])), "approval") !== false) {
+                $approvalData[] = $oldRow[$oldIndex] ?? '';
+            }
+        }
+        
+        $newRow = array_merge($newRow, $approvalData);
+
+        // Pad the row with empty strings for any newly added columns
+        $expectedCount = count($finalHeaders);
+        $currentRowCount = count($newRow);
+        for ($i = $currentRowCount; $i < $expectedCount; $i++) {
+            $newRow[] = '';
+        }
+
         $newDataRows[] = $newRow;
     }
-    return array_merge([$newHeaders], $newDataRows);
+
+    return array_merge([$finalHeaders], $newDataRows);
 }
 
 function processPendingApprovals(array $sheetData, string $sheetId, string $spreadSheetTitle): array
