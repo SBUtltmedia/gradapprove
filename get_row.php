@@ -16,7 +16,9 @@ $sheetName = "Sheet1";
 
 $spreadsheet = new Spreadsheet($spreadsheetId);
 
+
+
 //asJson true means op is json
-$dataJson = json_decode($spreadsheet->getRange("A$rowId:O$rowId"));
+$dataJson = json_decode($spreadsheet->getRange("A$rowId:ZZ$rowId"));
 echo json_encode($dataJson[0]);
 ?>
