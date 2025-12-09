@@ -12,3 +12,15 @@
 
 3.  **Complete:**
     Professors listed in the sheet will automatically begin receiving emails about new applicants.
+
+
+
+
+## Important Considerations
+
+To ensure optimal functionality and a consistent design approach within this project, please adhere to the following column naming conventions in your Google Sheet:
+
+*   Utilize separate columns for `First Name` and `Last Name` instead of a single `Name` column.
+*   Ensure the column name containing professor email addresses includes 'email address'.
+
+Following this structure will support a more consistent design approach.
